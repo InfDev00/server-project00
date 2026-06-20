@@ -1,0 +1,41 @@
+# ── 빌드 산출물 ──
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+build/
+out/
+
+# ── .NET ──
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+project.lock.json
+project.fragment.lock.json
+artifacts/
+[Tt]est[Rr]esult*/
+*.coverage
+*.coveragexml
+
+# ── IDE / 에디터 ──
+.vs/
+.vscode/
+.idea/
+*.swp
+*~
+
+# ── OS ──
+.DS_Store
+Thumbs.db
+
+# ── NuGet ──
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+!packages/build/
