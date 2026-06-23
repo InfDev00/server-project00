@@ -2,7 +2,7 @@ using System.Net.Sockets;
 
 public class User
 {
-    byte _isClosed = 0;
+    int _isClosed = 0;
     bool _isSending = false;
     readonly Queue<byte[]> _sendQueue = new();
 

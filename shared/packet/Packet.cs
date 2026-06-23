@@ -19,7 +19,6 @@ public abstract class Packet
     public static T Create<T>(User owner) where T : Packet, new()
     {
         var packet = new T { Owner = owner, _buffer = new byte[1024], _position = MessageResolver.HEADER_SIZE + sizeof(short) };
-        packet.OnCreated();
         return packet;
     }
 
@@ -41,13 +40,21 @@ public abstract class Packet
             _buffer = buffer.Array!,
             _position = buffer.Offset + MessageResolver.HEADER_SIZE + sizeof(short)
         };
-        packet.OnCreated();
+        packet.OnRead();
         return packet;
     }
 
     public static void Register()
     {
         _parsers[Protocol.Login_req] = ParseIncoming<LoginReqPacket>;
+        _parsers[Protocol.Login_ack] = ParseIncoming<LoginAckPacket>;
+    }
+
+    // 송신: 하위 클래스가 payload를 쓰고(OnWrite) 헤더까지 채워 바이트 반환
+    public byte[] Pack()
+    {
+        OnWrite();
+        return GetBytes();
     }
 
     // 송신: 길이·PacketId를 헤더에 쓰고 바이트 배열 반환
@@ -89,5 +96,9 @@ public abstract class Packet
 
     public abstract void Handle();
 
-    protected virtual void OnCreated() { }
+    // 수신: 버퍼에서 필드 읽기 (하위 클래스가 override)
+    protected virtual void OnRead() { }
+
+    // 송신: 버퍼에 필드 쓰기 (하위 클래스가 override)
+    protected virtual void OnWrite() { }
 }

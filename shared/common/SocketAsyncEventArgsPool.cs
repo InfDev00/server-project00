@@ -13,7 +13,7 @@ public class SocketAsyncEventArgsPool
 
     public void Push(SocketAsyncEventArgs args)
     {
-        ArgumentNullException.ThrowIfNull(args);
+        if (args is null) throw new ArgumentNullException(nameof(args));
 
         lock (_pool)
         {

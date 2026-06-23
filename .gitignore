@@ -39,3 +39,45 @@ Thumbs.db
 .nuget/
 packages/
 !packages/build/
+
+# ── Unity (client/) ──
+# 생성/캐시 폴더 (Unity가 Library·Temp 등에서 재생성)
+client/[Ll]ibrary/
+client/[Tt]emp/
+client/[Oo]bj/
+client/[Bb]uild/
+client/[Bb]uilds/
+client/[Ll]ogs/
+client/[Uu]ser[Ss]ettings/
+client/[Mm]emoryCaptures/
+
+# Unity 패키지 매니페스트는 추적해야 함 (위 NuGet packages/ 규칙이
+# macOS 대소문자 미구분 파일시스템에서 Packages/까지 무시하므로 예외 처리)
+!client/Packages/
+!client/Packages/**
+
+# Unity 자동 생성 솔루션/프로젝트 파일
+client/*.csproj
+client/*.sln
+client/*.slnx
+client/*.unityproj
+client/.vsconfig
+
+# Asset meta 데이터: 빈 폴더에 대한 meta는 무시
+client/[Aa]ssets/**/*.meta.orig
+
+# 크래시 리포트·로그
+sysinfo.txt
+*.stackdump
+crashlytics-build.properties
+
+# shared DLL 디버깅 심볼 (빌드 시 재생성 — 추적 제외)
+client/Assets/Plugins/Shared.pdb
+client/Assets/Plugins/Shared.pdb.meta
+
+# Unity 패키지 빌드 산출물
+*.unitypackage
+*.apk
+*.aab
+*.app
+*.ipa
