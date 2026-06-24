@@ -1,6 +1,6 @@
 using System.Net.Sockets;
 
-public class User
+public class Session
 {
     int _isClosed = 0;
     bool _isSending = false;
@@ -8,14 +8,16 @@ public class User
 
     public Socket Socket;
 
-    public SocketAsyncEventArgs ReceiveEventArgs;
-    public SocketAsyncEventArgs SendEventArgs;
+    public SocketAsyncEventArgs? ReceiveEventArgs;
+    public SocketAsyncEventArgs? SendEventArgs;
 
-    public event Action<User> OnSessionClosed;
+    public event Action<Session> OnSessionClosed;
 
     MessageResolver _messageResolver;
 
-    public User(int bufferSize)
+    public IPeer? Peer;
+
+    public Session(int bufferSize)
     {
         _messageResolver = new MessageResolver(bufferSize);
     }
@@ -28,6 +30,7 @@ public class User
         Socket.Close();
         Socket = null;
 
+        Peer?.OnRemoved();
         OnSessionClosed?.Invoke(this);
     }
 
@@ -70,19 +73,16 @@ public class User
             Close();
     }
 
-    public void OnConnected()
-    {
-        _isClosed = 0;
-    }
-
     public void OnReceive(byte[] buffer, int offset, int transferred)
     {
         _messageResolver.ReceiveMessage(buffer, offset, transferred, OnMessageCompleted);
     }
 
-    protected void OnMessageCompleted(ArraySegment<byte> buffer)
+    private void OnMessageCompleted(ArraySegment<byte> buffer)
     {
-        Packet? packet = Packet.Parse(this, buffer);
-        packet?.Handle();
+        if (Peer == null) return;
+        Packet? packet = Packet.Parse(Peer, buffer);
+        if (packet != null)
+            Peer.OnMessage(packet);
     }
 }

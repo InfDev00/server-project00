@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Sockets;
 
 public class NetworkService
@@ -8,11 +9,17 @@ public class NetworkService
     private BufferManager _bufferManager;
     int _bufferSize;
 
+    public Action<Session> OnSessionCreated;
+
+    public NetworkService()
+    {
+        Packet.Register();
+        OnSessionCreated = null;
+    }
+
     public void Initialize() => Initialize(10000, 1024);
     public void Initialize(int maxConnection, int bufferSize)
     {
-        Packet.Register();
-
         _bufferSize = bufferSize;
 
         int preAllocCount = 1;
@@ -50,27 +57,63 @@ public class NetworkService
         clientListener.Start(host, port, backlog);
     }
 
+    public void Connect(IPEndPoint remoteEndpoint)
+    {
+        Socket clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        clientSocket.NoDelay = true;
+
+        SocketAsyncEventArgs args = new SocketAsyncEventArgs();
+        args.Completed += OnConnectCompleted;
+        args.RemoteEndPoint = remoteEndpoint;
+
+        clientSocket.ConnectAsyncEx(args, OnConnectCompleted);
+    }
+
+    private void OnConnectCompleted(object? sender, SocketAsyncEventArgs args)
+    {
+        if (args.SocketError == SocketError.Success)
+        {
+            Session session = new Session(1024);
+
+            session.OnSessionClosed += OnSessionClosed;
+
+            SocketAsyncEventArgs receiveArgs = new SocketAsyncEventArgs();
+            receiveArgs.Completed += new EventHandler<SocketAsyncEventArgs>(OnReceiveCompleted);
+            receiveArgs.UserToken = session;
+            receiveArgs.SetBuffer(new byte[1024], 0, 1024);
+
+            SocketAsyncEventArgs sendArgs = new SocketAsyncEventArgs();
+            sendArgs.Completed += new EventHandler<SocketAsyncEventArgs>(OnSendCompleted);
+            sendArgs.UserToken = session;
+            sendArgs.SetBuffer(null, 0, 0);
+
+            OnSessionCreated?.Invoke(session);
+
+            BeginReceive(args.ConnectSocket, receiveArgs, sendArgs);
+        }
+    }
+
     private void OnNewClientEnter(Socket clientSocket, object token)
     {
         SocketAsyncEventArgs receiveArgs = _receiveEventArgsPool.Pop();
         SocketAsyncEventArgs sendArgs = _sendEventArgsPool.Pop();
 
-        User user = new User(_bufferSize);
-        user.OnSessionClosed += OnSessionClosed;
+        Session session = new(_bufferSize);
+        session.OnSessionClosed += OnSessionClosed;
 
-        receiveArgs.UserToken = user;
-        sendArgs.UserToken = user;
+        receiveArgs.UserToken = session;
+        sendArgs.UserToken = session;
 
-        user.OnConnected();
+        OnSessionCreated?.Invoke(session);
 
         BeginReceive(clientSocket, receiveArgs, sendArgs);
     }
 
     private void OnSendCompleted(object? sender, SocketAsyncEventArgs args)
     {
-        if (args.TryGetUser(out User user))
+        if (args.TryGetSession(out Session? session))
         {
-            user.ProcessSend(args);
+            session!.ProcessSend(args);
         }
     }
 
@@ -84,12 +127,12 @@ public class NetworkService
 
     private void BeginReceive(Socket socket, SocketAsyncEventArgs receiveArgs, SocketAsyncEventArgs sendArgs)
     {
-        if (receiveArgs.TryGetUser(out User user))
+        if (receiveArgs.TryGetSession(out Session? session))
         {
-            user.ReceiveEventArgs = receiveArgs;
-            user.SendEventArgs = sendArgs;
+            session!.ReceiveEventArgs = receiveArgs;
+            session.SendEventArgs = sendArgs;
 
-            user.Socket = socket;
+            session.Socket = socket;
 
             socket.ReceiveAsyncEx(receiveArgs, ProcessReceive);
         }
@@ -97,27 +140,27 @@ public class NetworkService
 
     private void ProcessReceive(SocketAsyncEventArgs args)
     {
-        if (args.TryGetUser(out User user))
+        if (args.TryGetSession(out Session? session))
         {
             if (args.BytesTransferred > 0 && args.SocketError == SocketError.Success)
             {
-                user.OnReceive(args.Buffer, args.Offset, args.BytesTransferred);
+                session!.OnReceive(args.Buffer, args.Offset, args.BytesTransferred);
 
-                user.Socket.ReceiveAsyncEx(args, ProcessReceive);
+                session.Socket.ReceiveAsyncEx(args, ProcessReceive);
             }
             else
             {
-                user.Close();
+                session!.Close();
             }
         }
     }
 
-    private void OnSessionClosed(User user)
+    private void OnSessionClosed(Session session)
     {
-        _receiveEventArgsPool?.Push(user.ReceiveEventArgs);
-        _sendEventArgsPool?.Push(user.SendEventArgs);
+        _receiveEventArgsPool?.Push(session.ReceiveEventArgs);
+        _sendEventArgsPool?.Push(session.SendEventArgs);
 
-        user.ReceiveEventArgs = null;
-        user.SendEventArgs = null;
+        session.ReceiveEventArgs = null;
+        session.SendEventArgs = null;
     }
 }

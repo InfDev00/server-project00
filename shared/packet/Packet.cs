@@ -6,24 +6,24 @@ public enum Protocol : short
 
 public abstract class Packet
 {
-    public User Owner { get; protected set; }
+    public IPeer Owner { get; protected set; }
 
     protected byte[] _buffer;
     protected int _position;
 
     public short PacketId { get; protected set; }
 
-    private static readonly Dictionary<Protocol, Func<User, ArraySegment<byte>, Packet>> _parsers = [];
+    private static readonly Dictionary<Protocol, Func<IPeer, ArraySegment<byte>, Packet>> _parsers = [];
 
     // 송신용: 빈 버퍼로 패킷 생성 (payload 시작 위치는 헤더 뒤)
-    public static T Create<T>(User owner) where T : Packet, new()
+    public static T Create<T>(IPeer owner) where T : Packet, new()
     {
         var packet = new T { Owner = owner, _buffer = new byte[1024], _position = MessageResolver.HEADER_SIZE + sizeof(short) };
         return packet;
     }
 
     // 수신용: buffer에서 Protocol ID 읽어 등록된 파서로 생성
-    public static Packet? Parse(User owner, ArraySegment<byte> buffer)
+    public static Packet? Parse(IPeer owner, ArraySegment<byte> buffer)
     {
         if (buffer.Array is null) return null;
         short id = BitConverter.ToInt16(buffer.Array, buffer.Offset + MessageResolver.HEADER_SIZE);
@@ -32,7 +32,7 @@ public abstract class Packet
     }
 
     // Register 람다에서 수신 패킷 생성 시 사용
-    public static T ParseIncoming<T>(User owner, ArraySegment<byte> buffer) where T : Packet, new()
+    public static T ParseIncoming<T>(IPeer owner, ArraySegment<byte> buffer) where T : Packet, new()
     {
         var packet = new T
         {

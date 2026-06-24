@@ -2,15 +2,15 @@ using System.Net.Sockets;
 
 public static class SharedHelper
 {
-    public static bool TryGetUser(this SocketAsyncEventArgs args, out User user)
+    public static bool TryGetSession(this SocketAsyncEventArgs args, out Session? session)
     {
-        if (args.UserToken is User _user)
+        if (args.UserToken is Session _session)
         {
-            user = _user;
+            session = _session;
             return true;
         }
 
-        user = default;
+        session = default;
         return false;
     }
 
@@ -27,6 +27,14 @@ public static class SharedHelper
         if (!socket.SendAsync(args))
         {
             onCompleted?.Invoke(args);
+        }
+    }
+
+    public static void ConnectAsyncEx(this Socket socket, SocketAsyncEventArgs args, Action<object?, SocketAsyncEventArgs> onCompleted)
+    {
+        if (!socket.ConnectAsync(args))
+        {
+            onCompleted?.Invoke(null, args);
         }
     }
 }

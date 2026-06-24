@@ -21,6 +21,6 @@ public class LoginReqPacket : Packet
 
         var ack = Packet.Create<LoginAckPacket>(Owner);
         ack.Success = true;
-        Owner.Send(ack.Pack());
+        Owner.Send(ack);
     }
 }
