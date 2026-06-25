@@ -18,7 +18,12 @@ public class ServerSession : IPeer
         _session.Peer = this;       // 세션에 자신을 바인딩
     }
 
-    public void OnMessage(Packet packet) => RecvQueue.Enqueue(packet);  // 즉시 처리 X, 큐로만
+    // 즉시 처리 X, 큐로만 (워커 스레드)
+    public void OnMessage(Packet packet)
+    {
+        UnityEngine.Debug.Log($"[Recv:worker] {packet.GetType().Name} 수신 → 큐 적재");
+        RecvQueue.Enqueue(packet);
+    }
     public void Send(Packet packet) => _session.Send(packet.Pack());
     public void OnRemoved() => UnityEngine.Debug.Log("서버 연결 종료");
     public void Disconnected() => _session.Close();

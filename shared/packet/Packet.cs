@@ -3,6 +3,13 @@ public enum Protocol : short
 {
     Login_req = 1,
     Login_ack = 2,
+
+    Room_Enter_req = 3,
+    Room_Enter_ack = 4,
+    Room_State_notify = 5,
+    Loading_notify = 6,         // 서버→클라: 정원 충족, 로딩 시작
+    Loading_complete_req = 7,   // 클라→서버: 로딩 완료 보고
+    Game_Start_notify = 8,      // 서버→클라: 전원 로딩 완료, 게임 시작
 }
 
 // ============================================================
@@ -57,6 +64,12 @@ public abstract class Packet
     {
         _parsers[Protocol.Login_req] = ParseIncoming<LoginReqPacket>;
         _parsers[Protocol.Login_ack] = ParseIncoming<LoginAckPacket>;
+        _parsers[Protocol.Room_Enter_req] = ParseIncoming<RoomEnterReqPacket>;
+        _parsers[Protocol.Room_Enter_ack] = ParseIncoming<RoomEnterAckPacket>;
+        _parsers[Protocol.Room_State_notify] = ParseIncoming<RoomStateNotifyPacket>;
+        _parsers[Protocol.Loading_notify] = ParseIncoming<LoadingNotifyPacket>;
+        _parsers[Protocol.Loading_complete_req] = ParseIncoming<LoadingCompleteReqPacket>;
+        _parsers[Protocol.Game_Start_notify] = ParseIncoming<GameStartNotifyPacket>;
     }
 
     // 송신: 하위 클래스가 payload를 쓰고(OnWrite) 헤더까지 채워 바이트 반환
@@ -105,6 +118,19 @@ public abstract class Packet
         string str = System.Text.Encoding.UTF8.GetString(_buffer, _position, len);
         _position += len;
         return str;
+    }
+
+    protected void WriteInt(int value)
+    {
+        BitConverter.TryWriteBytes(new Span<byte>(_buffer, _position, sizeof(int)), value);
+        _position += sizeof(int);
+    }
+
+    protected int ReadInt()
+    {
+        int value = BitConverter.ToInt32(_buffer, _position);
+        _position += sizeof(int);
+        return value;
     }
 
     // 수신 측 처리 로직 (하위 클래스가 구현)

@@ -5,6 +5,11 @@
 // ============================================================
 public class Program
 {
+    // 전역 매칭 매니저 (모든 User가 공유). 정원 2명으로 시작.
+    public static GameRoomManager RoomManager { get; private set; } = new GameRoomManager(2);
+
+    static int _nextUserID = 0;
+
     static void Main(string[] args)
     {
         NetworkService service = new NetworkService();
@@ -25,6 +30,8 @@ public class Program
     static void OnSessionCreated(Session session)
     {
         Console.WriteLine("[Server] 클라이언트 접속 — 세션 생성");
-        User user = new User(session);
+
+        var id = Interlocked.Increment(ref _nextUserID);
+        User user = new User(session, id);
     }
 }

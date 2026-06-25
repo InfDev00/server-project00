@@ -1,6 +1,6 @@
 // ============================================================
 // LoginReqPacket - 로그인 요청 패킷 (클라 → 서버)
-// 사용자 이름을 실어 보내고, 서버는 Handle에서 LoginAck로 응답한다.
+// 사용자 이름을 실어 보낸다. 서버 처리는 User.OnMessage가 담당한다.
 // ============================================================
 public class LoginReqPacket : Packet
 {
@@ -19,13 +19,6 @@ public class LoginReqPacket : Packet
         Username = ReadString();
     }
 
-    public override void Handle()
-    {
-        Console.WriteLine($"  Protocol : {Protocol.Login_req} (id={( short)Protocol.Login_req})");
-        Console.WriteLine($"  Username : {Username}");
-
-        var ack = Packet.Create<LoginAckPacket>(Owner);
-        ack.Success = true;
-        Owner.Send(ack);
-    }
+    // 서버 처리는 User.OnMessage에서 라우팅하므로 비움
+    public override void Handle() { }
 }
