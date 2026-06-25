@@ -120,12 +120,14 @@ public abstract class Packet
         return str;
     }
 
+    // int 1개 쓰고 커서 전진
     protected void WriteInt(int value)
     {
         BitConverter.TryWriteBytes(new Span<byte>(_buffer, _position, sizeof(int)), value);
         _position += sizeof(int);
     }
 
+    // int 1개 읽고 커서 전진
     protected int ReadInt()
     {
         int value = BitConverter.ToInt32(_buffer, _position);

@@ -19,8 +19,6 @@ public class GameRoom
 
     public RoomState State { get; private set; } = RoomState.Waiting;
 
-    public int TurnPlayerID => _users.Keys.Min();
-
     public GameRoom(int id, int capacity)
     {
         Id = id;
@@ -81,6 +79,22 @@ public class GameRoom
     public int LoadedCount
     {
         get { lock (_lock) return _loaded.Count; }
+    }
+
+    // 첫 턴 플레이어 ID — 가장 작은 ID(먼저 들어온 유저)가 선턴.
+    // 락 안에서 읽어 입장/퇴장과의 동시 수정 충돌을 막는다. 빈 방이면 -1.
+    public int TurnPlayerID
+    {
+        get
+        {
+            lock (_lock)
+            {
+                int min = -1;
+                foreach (int id in _users.Keys)
+                    if (min == -1 || id < min) min = id;
+                return min;
+            }
+        }
     }
 
     // 같은 방 전원에게 송신. 스냅샷만 락 안에서 뜨고 실제 Send는 락 밖에서.

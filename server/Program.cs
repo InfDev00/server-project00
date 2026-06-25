@@ -8,6 +8,7 @@ public class Program
     // 전역 매칭 매니저 (모든 User가 공유). 정원 2명으로 시작.
     public static GameRoomManager RoomManager { get; private set; } = new GameRoomManager(2);
 
+    // User ID 발급 카운터 (Interlocked로 스레드 안전하게 증가)
     static int _nextUserID = 0;
 
     static void Main(string[] args)
@@ -31,7 +32,7 @@ public class Program
     {
         Console.WriteLine("[Server] 클라이언트 접속 — 세션 생성");
 
-        var id = Interlocked.Increment(ref _nextUserID);
-        User user = new User(session, id);
+        var id = Interlocked.Increment(ref _nextUserID);   // 고유 ID 발급
+        User user = new User(session, id);                 // 세션에 게임 로직 바인딩
     }
 }

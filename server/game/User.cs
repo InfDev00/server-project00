@@ -6,6 +6,8 @@
 public class User : IPeer
 {
     Session _session;
+
+    // 서버가 발급한 전역 고유 식별자 (방 인덱싱·본인/상대 구분에 사용)
     public int ID { get; }
 
     public string Username { get; private set; } = string.Empty;
@@ -17,7 +19,7 @@ public class User : IPeer
     {
         _session = session;
         _session.Peer = this;       // 세션에 자신을 바인딩
-        ID = id;
+        ID = id;                    // Program이 접속 시 발급한 고유 ID
     }
 
     // 수신 패킷을 서버 처리 로직으로 라우팅 (IOCP 워커 스레드)
