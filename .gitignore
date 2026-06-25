@@ -81,3 +81,10 @@ client/Assets/Plugins/Shared.pdb.meta
 *.aab
 *.app
 *.ipa
+
+# ── Claude Code ──
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+.claude/settings.local.json
+.mcp.json
