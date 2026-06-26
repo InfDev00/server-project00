@@ -19,6 +19,4 @@ public class LoadingNotifyPacket : Packet
     {
         RoomId = ReadShort();
     }
-
-    public override void Handle() { }
 }

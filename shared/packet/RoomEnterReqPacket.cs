@@ -9,10 +9,4 @@ public class RoomEnterReqPacket : Packet
     {
         PacketId = (short)Protocol.Room_Enter_req;
     }
-
-    // 수신(서버): 읽을 필드 없음
-    protected override void OnRead() { }
-
-    // 서버 처리는 User.OnMessage에서 라우팅하므로 비움
-    public override void Handle() { }
 }

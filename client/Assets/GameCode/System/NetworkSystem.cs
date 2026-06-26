@@ -51,7 +51,7 @@ public class NetworkSystem : MonoBehaviour
         Debug.Log("서버 연결 성공 → 로그인 요청 전송");
     }
 
-    public T CreatePacket<T>() where T : Packet, new() => Packet.Create<T>(_gameServer);
+    public T CreatePacket<T>() where T : Packet, new() => Packet.Create<T>();
 
     public void Send(Packet packet)
     {

@@ -94,7 +94,7 @@ public class Session
     private void OnMessageCompleted(ArraySegment<byte> buffer)
     {
         if (Peer == null) return;
-        Packet? packet = Packet.Parse(Peer, buffer);
+        Packet? packet = Packet.Parse(buffer);
         if (packet != null)
             Peer.OnMessage(packet);
     }

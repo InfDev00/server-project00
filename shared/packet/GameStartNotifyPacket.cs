@@ -22,6 +22,4 @@ public class GameStartNotifyPacket : Packet
         RoomId = ReadShort();
         TurnPlayerID = ReadInt();
     }
-
-    public override void Handle() { }
 }

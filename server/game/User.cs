@@ -38,6 +38,12 @@ public class User : IPeer
             case LoadingCompleteReqPacket:
                 Program.RoomManager.OnLoadingComplete(this);
                 break;
+            case UserSelectReqPacket select:
+                if (select.Stop)
+                    CurrentRoom?.Logic.Stop(ID);
+                else
+                    CurrentRoom?.Logic.Roll(ID);
+                break;
         }
     }
 
@@ -47,7 +53,7 @@ public class User : IPeer
         Username = login.Username;
         Console.WriteLine($"[로그인] {Username}");
 
-        var ack = Packet.Create<LoginAckPacket>(this);
+        var ack = Packet.Create<LoginAckPacket>();
         ack.Success = true;
         Send(ack);
     }

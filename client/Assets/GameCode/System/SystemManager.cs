@@ -22,8 +22,12 @@ public class SystemManager : MonoBehaviour
     // 현재 턴 플레이어 ID (게임 시작/턴 통지로 갱신). 내 ID와 비교해 내 턴 판단.
     public int TurnPlayerID;
 
+    public int MyID;
+
     void Start()
     {
         DontDestroyOnLoad(this);   // 씬 전환에도 파괴되지 않게 영속화
     }
+
+    public bool IsMyTurn() => TurnPlayerID == MyID;
 }

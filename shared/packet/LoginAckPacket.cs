@@ -18,9 +18,4 @@ public class LoginAckPacket : Packet
     {
         Success = ReadShort() == 1;
     }
-
-    public override void Handle()
-    {
-        Console.WriteLine($"[LoginAck] success={Success}");
-    }
 }

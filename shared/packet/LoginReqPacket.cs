@@ -18,7 +18,4 @@ public class LoginReqPacket : Packet
     {
         Username = ReadString();
     }
-
-    // 서버 처리는 User.OnMessage에서 라우팅하므로 비움
-    public override void Handle() { }
 }

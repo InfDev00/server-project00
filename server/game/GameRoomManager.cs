@@ -25,7 +25,6 @@ public class GameRoomManager
     public void Enqueue(User user)
     {
         GameRoom room;
-        int current, needed;
         bool started;
 
         lock (_lock)
@@ -40,38 +39,17 @@ public class GameRoomManager
             room = _openRoom;
             room.TryAdd(user);          // 매니저 락 안에서 호출 (락 순서 매니저→방)
 
-            current = room.Count;
-            needed = room.Capacity;
             started = room.State == RoomState.Playing;
 
             if (started)
                 _openRoom = null;       // 다음 입장은 새 방으로
         }
 
-        // --- 락 밖: 소켓 I/O ---
+        // --- 락 밖: 입장 통지는 방이 소유 ---
+        room.OnUserEnter(user);
 
-        // 입장한 본인에게 결과 통지
-        var ack = Packet.Create<RoomEnterAckPacket>(user);
-        ack.RoomId = (short)room.Id;
-        ack.Current = (short)current;
-        ack.Needed = (short)needed;
-        user.Send(ack);
-
-        // 같은 방 전원에게 현재 인원 갱신 통지
-        var state = Packet.Create<RoomStateNotifyPacket>(user);
-        state.Current = (short)current;
-        state.Needed = (short)needed;
-        room.Broadcast(state.Pack());
-
-        // 정원 충족 → 로딩 시작 통지 (게임 시작은 전원 로딩 완료 후)
         if (started)
-        {
-            var loading = Packet.Create<LoadingNotifyPacket>(user);
-            loading.RoomId = (short)room.Id;
-            room.Broadcast(loading.Pack());
-
             Console.WriteLine($"[Room {room.Id}] 정원 충족 → 로딩 시작");
-        }
     }
 
     // 로딩 완료 보고 — 방 전원이 완료되면 게임 시작을 broadcast (준비 배리어)
@@ -89,9 +67,11 @@ public class GameRoomManager
 
         if (!allReady) return;
 
-        var start = Packet.Create<GameStartNotifyPacket>(user);
+        room.Logic.StartGame();     // 게임 상태 초기화(점수·첫 턴)
+
+        var start = Packet.Create<GameStartNotifyPacket>();
         start.RoomId = (short)room.Id;
-        start.TurnPlayerID = room.TurnPlayerID;
+        start.TurnPlayerID = room.FirstTurnPlayerID;
         room.Broadcast(start.Pack());
 
         Console.WriteLine($"[Room {room.Id}] 전원 로딩 완료 → 게임 시작 broadcast ({room.Count}명)");
@@ -101,7 +81,6 @@ public class GameRoomManager
     public void OnUserLeft(User user)
     {
         GameRoom? room;
-        int current = 0, needed = 0;
         bool notify = false;
 
         lock (_lock)
@@ -121,8 +100,6 @@ public class GameRoomManager
             }
             else
             {
-                current = room.Count;
-                needed = room.Capacity;
                 notify = true;
             }
         }
@@ -130,10 +107,10 @@ public class GameRoomManager
         // 방이 살아있다면 남은 인원에 갱신 통지 (락 밖)
         if (notify)
         {
-            var state = Packet.Create<RoomStateNotifyPacket>(user);
-            state.Current = (short)current;
-            state.Needed = (short)needed;
-            room!.Broadcast(state.Pack());
+            var state = Packet.Create<RoomStateNotifyPacket>();
+            state.Current = (short)room!.Count;
+            state.Needed = (short)room.Capacity;
+            room.Broadcast(state.Pack());
         }
     }
 }

@@ -5,6 +5,7 @@
 public class RoomEnterAckPacket : Packet
 {
     public short RoomId;
+    public int UID;
     public short Current;   // 현재 방 인원
     public short Needed;    // 정원(시작에 필요한 인원)
 
@@ -12,6 +13,7 @@ public class RoomEnterAckPacket : Packet
     protected override void OnWrite()
     {
         PacketId = (short)Protocol.Room_Enter_ack;
+        WriteInt(UID);
         WriteShort(RoomId);
         WriteShort(Current);
         WriteShort(Needed);
@@ -20,10 +22,9 @@ public class RoomEnterAckPacket : Packet
     // 수신(클라): 방 정보 읽기
     protected override void OnRead()
     {
+        UID = ReadInt();
         RoomId = ReadShort();
         Current = ReadShort();
         Needed = ReadShort();
     }
-
-    public override void Handle() { }
 }

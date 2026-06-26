@@ -10,6 +10,9 @@ public enum Protocol : short
     Loading_notify = 6,         // 서버→클라: 정원 충족, 로딩 시작
     Loading_complete_req = 7,   // 클라→서버: 로딩 완료 보고
     Game_Start_notify = 8,      // 서버→클라: 전원 로딩 완료, 게임 시작
+
+    User_Select_req = 9,               // 클라→서버: 굴리기 요청
+    Turn_Result_notify = 10,    // 서버→클라: 굴린 결과(누적/게임오버/다음 턴) 통지
 }
 
 // ============================================================
@@ -20,38 +23,35 @@ public enum Protocol : short
 // ============================================================
 public abstract class Packet
 {
-    public IPeer Owner { get; protected set; }   // 이 패킷을 주고받는 상대(세션)
-
     protected byte[] _buffer;       // 직렬화 버퍼
     protected int _position;        // 현재 읽기/쓰기 커서 위치
 
     public short PacketId { get; protected set; }
 
     // Protocol ID → 수신 패킷 생성 함수 매핑 테이블
-    private static readonly Dictionary<Protocol, Func<IPeer, ArraySegment<byte>, Packet>> _parsers = [];
+    private static readonly Dictionary<Protocol, Func<ArraySegment<byte>, Packet>> _parsers = [];
 
     // 송신용: 빈 버퍼로 패킷 생성 (payload 시작 위치는 헤더 뒤)
-    public static T Create<T>(IPeer owner) where T : Packet, new()
+    public static T Create<T>() where T : Packet, new()
     {
-        var packet = new T { Owner = owner, _buffer = new byte[1024], _position = MessageResolver.HEADER_SIZE + sizeof(short) };
+        var packet = new T { _buffer = new byte[1024], _position = MessageResolver.HEADER_SIZE + sizeof(short) };
         return packet;
     }
 
     // 수신용: buffer에서 Protocol ID 읽어 등록된 파서로 생성
-    public static Packet? Parse(IPeer owner, ArraySegment<byte> buffer)
+    public static Packet? Parse(ArraySegment<byte> buffer)
     {
         if (buffer.Array is null) return null;
         short id = BitConverter.ToInt16(buffer.Array, buffer.Offset + MessageResolver.HEADER_SIZE);
         var protocol = (Protocol)id;
-        return _parsers.TryGetValue(protocol, out var parser) ? parser(owner, buffer) : null;
+        return _parsers.TryGetValue(protocol, out var parser) ? parser(buffer) : null;
     }
 
     // Register 람다에서 수신 패킷 생성 시 사용
-    public static T ParseIncoming<T>(IPeer owner, ArraySegment<byte> buffer) where T : Packet, new()
+    public static T ParseIncoming<T>(ArraySegment<byte> buffer) where T : Packet, new()
     {
         var packet = new T
         {
-            Owner = owner,
             _buffer = buffer.Array!,
             _position = buffer.Offset + MessageResolver.HEADER_SIZE + sizeof(short)
         };
@@ -70,6 +70,8 @@ public abstract class Packet
         _parsers[Protocol.Loading_notify] = ParseIncoming<LoadingNotifyPacket>;
         _parsers[Protocol.Loading_complete_req] = ParseIncoming<LoadingCompleteReqPacket>;
         _parsers[Protocol.Game_Start_notify] = ParseIncoming<GameStartNotifyPacket>;
+        _parsers[Protocol.User_Select_req] = ParseIncoming<UserSelectReqPacket>;
+        _parsers[Protocol.Turn_Result_notify] = ParseIncoming<TurnResultNotifyPacket>;
     }
 
     // 송신: 하위 클래스가 payload를 쓰고(OnWrite) 헤더까지 채워 바이트 반환
@@ -135,12 +137,9 @@ public abstract class Packet
         return value;
     }
 
-    // 수신 측 처리 로직 (하위 클래스가 구현)
-    public abstract void Handle();
-
     // 수신: 버퍼에서 필드 읽기 (하위 클래스가 override)
     protected virtual void OnRead() { }
 
     // 송신: 버퍼에 필드 쓰기 (하위 클래스가 override)
-    protected virtual void OnWrite() { }
+    protected abstract void OnWrite();
 }

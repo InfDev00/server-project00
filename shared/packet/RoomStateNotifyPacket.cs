@@ -21,6 +21,4 @@ public class RoomStateNotifyPacket : Packet
         Current = ReadShort();
         Needed = ReadShort();
     }
-
-    public override void Handle() { }
 }

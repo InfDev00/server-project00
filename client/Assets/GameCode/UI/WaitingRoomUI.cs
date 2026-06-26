@@ -40,6 +40,7 @@ public class WaitingRoomUI : IUI
     private void OnEnterAck(RoomEnterAckPacket p)
     {
         _roomId = p.RoomId;
+        SystemManager.Instance.MyID = p.UID;
         UpdateStatus(p.Current, p.Needed);
     }
 
